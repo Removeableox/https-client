@@ -1,3 +1,7 @@
+mod https;
+use https::HttpsClient;
+
 fn main() {
-    println!("Hello, world!");
+    let url = String::from("www.youtube.com");
+    let https_client = HttpsClient::new(&url);
 }
