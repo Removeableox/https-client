@@ -1,5 +1,5 @@
 mod https;
-use https::HttpsClient;
+use https::client::HttpsClient;
 
 fn main() {
     let url = String::from("www.youtube.com");
