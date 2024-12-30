@@ -8,6 +8,7 @@ fn generate_random_number() -> u8 {
 }
 
 type ByteArray = Vec<u8>;
+type Range = Vec<usize>;
 
 fn random_byte_array(size: u8) -> ByteArray {
     let mut random = Vec::new();
@@ -18,35 +19,32 @@ fn random_byte_array(size: u8) -> ByteArray {
     random
 }
 
-/// if an "override_exponents" value is given it will overide the standard  
-/// decrementing exponent for byte array calc:
-///
-/// byte0 * 256^{size-1}....lastbyte * 256^{0}
-///
-/// in this context this is used for evaluating byte arrays in multiple sections
-/// because rust cannot store a 32 byte int so we make two 16 byte arrays and eval
-/// them (31 through 16) and (15 through 0) respectively 
-fn byte_array_eval(arr: ByteArray, override_exponents: Option<Vec<u8>>) -> u128 {
-    let size = arr.len();
-    let exponents: Vec<u8> = match override_exponents {
-        Some(override_exp) => override_exp,
-        None => (0..size as u8).rev().collect(),
-    };
 
-    let mut decimal_value: u128 = 0;
-    for (i, &byte) in arr.iter().enumerate() {
-        let exponent = exponents[i];
-        decimal_value += (byte as u128) * 256u128.pow(exponent as u32);
+/// more optimized solution to (a..b).rev().collect()
+fn range(mut a: usize, b: usize, step: usize) -> Range {
+    let mut range: Vec<usize> = Vec::new();
+    
+    while a != b {
+        range.push(a);
+        a += step;
     }
-    decimal_value
+
+    range 
+}
+
+fn mul_byte_arrays(a: &ByteArray, b: &ByteArray) -> ByteArray {
+    let size = a.len();
+    for i in (0..size).rev().collect() {
+        
+    }
+    vec![0]
 }
 
 pub fn gen_public_key(private_key: ByteArray) -> ByteArray {
     // 2^255 - 19 as a byte array (curve25519 modulus)
     let modulus_lower = vec![0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xED];
+
     let modulus_higher = vec![0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]; 
-    let higher_exponents = (0..32 as u8).rev().collect();
-    println!("{}", byte_array_eval(modulus_higher, Some(higher_exponents)));
 
     modulus_lower
 } 
@@ -81,10 +79,23 @@ pub struct Keys {
 
 #[cfg(test)]
 mod tests {
-    use super::{gen_public_key, random_byte_array};
+    use super::{gen_public_key, mul_byte_arrays, random_byte_array, ByteArray};
+
+    /// just for testing with small byte_arrays
+    fn byte_array_eval(arr: ByteArray) -> u128 {
+        let size = arr.len();
+        let exponents: ByteArray = (0..size as u8).rev().collect();
+        let mut decimal_value: u128 = 0;
+        for i in 0..size {
+            let byte = arr[i];
+            let exponent = exponents[i];
+            decimal_value += (byte as u128) * 256u128.pow(exponent as u32);
+        }
+        decimal_value
+    }
 
     #[test]
-    fn calc_modulus() {
-        gen_public_key(random_byte_array(32));
+    fn mul() {
+        assert_eq!(byte_array_eval(mul_byte_arrays(&vec![0,0,100], &vec![0,0,3])), 300); 
     }
 }
