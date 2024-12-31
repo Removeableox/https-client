@@ -1,4 +1,15 @@
-use std::{iter::Rev, time::{SystemTime, UNIX_EPOCH}, u128};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+type Key = [u8;32];
+
+const RANGE: [u8;32] = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31];
+const DRANGE: [u8;32] = [31,30,29,28,27,26,25,24,23,22,21,20,19,18,17,16,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0];
+
+#[derive(Default)]
+pub struct Keys {
+    public: Key,
+    private: Key, 
+}
 
 fn generate_random_number() -> u8 {
     let duration = SystemTime::now()
@@ -7,50 +18,54 @@ fn generate_random_number() -> u8 {
     duration.as_nanos() as u8 % 0xFF
 }
 
-type ByteArray = Vec<u8>;
-type Range = Vec<usize>;
-
-fn random_byte_array(size: u8) -> ByteArray {
-    let mut random = Vec::new();
-    for _ in 0..size {
-        random.push(generate_random_number());
+fn random_byte_array() -> Key {
+    let mut random = [0u8; 32]; 
+    for i in 0..32 {
+        random[i] = generate_random_number();
     }
     random[0] = 0x0;
     random
 }
 
+fn byte_arr_mul(a: &mut Key, b: u8) {
+    let mut carry: u8 = 0;
+    for i in DRANGE {
+        let value: u128 = (a[i as usize] + carry) as u128 * b as u128;
+        a[i as usize] = (value % 255) as u8;
+        carry = (value / 255) as u8;
+    }
+} 
 
-/// more optimized solution to (a..b).rev().collect()
-fn range(mut a: usize, b: usize, step: usize) -> Range {
-    let mut range: Vec<usize> = Vec::new();
+///////// OIHFOIHEOFH NOT WORKING WHFIHI
+fn byte_arr_mod(a: &mut Key, b: u8) -> Key {
+    let mut carry: u8 = 0;
+    let result = 0; 
+    for i in RANGE {
+        // some logic i suppose
+    }
+    result
+}
+
+fn mod_byte_arrays(a: Key, b: Key) -> Key {
+    // do something
     
-    while a != b {
-        range.push(a);
-        a += step;
-    }
-
-    range 
+    [0u8; 32] // temp
 }
 
-fn mul_byte_arrays(a: &ByteArray, b: &ByteArray) -> ByteArray {
-    let size = a.len();
-    for i in (0..size).rev().collect() {
-        
-    }
-    vec![0]
-}
-
-pub fn gen_public_key(private_key: ByteArray) -> ByteArray {
+pub fn gen_public_key(mut private_key: Key) -> Key {
     // 2^255 - 19 as a byte array (curve25519 modulus)
-    let modulus_lower = vec![0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xED];
+    let modulus = [0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xED];
+    
+    // 9 is the curve 25519 base point
+    byte_arr_mul(&mut private_key, 9u8);
 
-    let modulus_higher = vec![0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF]; 
+    let public_key = mod_byte_arrays(private_key, modulus);
 
-    modulus_lower
+    public_key 
 } 
 
 pub fn key_pair() -> Keys {
-    let private_key = random_byte_array(32);
+    let private_key = random_byte_array();
     let public_key = gen_public_key(private_key.clone());
     return Keys {
         private: private_key,
@@ -59,43 +74,20 @@ pub fn key_pair() -> Keys {
     }
 }
 
-#[derive(Default)]
-pub struct Keys {
-    public: Vec<u8>,
-    private: Vec<u8>,
-    server_public: Vec<u8>,
-    handshake_secret: Vec<u8>,
-    client_handshake_secret: Vec<u8>,
-    client_handshake_key: Vec<u8>,
-    server_handshake_key: Vec<u8>,
-    client_handshake_iv: Vec<u8>,
-    server_handshake_iv: Vec<u8>,
-
-    client_app_key: Vec<u8>,
-    client_app_iv: Vec<u8>,
-    server_app_key: Vec<u8>,
-    server_app_iv: Vec<u8>,
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{gen_public_key, mul_byte_arrays, random_byte_array, ByteArray};
+    use super::byte_arr_mod;
 
-    /// just for testing with small byte_arrays
-    fn byte_array_eval(arr: ByteArray) -> u128 {
-        let size = arr.len();
-        let exponents: ByteArray = (0..size as u8).rev().collect();
-        let mut decimal_value: u128 = 0;
-        for i in 0..size {
-            let byte = arr[i];
-            let exponent = exponents[i];
-            decimal_value += (byte as u128) * 256u128.pow(exponent as u32);
-        }
-        decimal_value
-    }
+    fn modulus() {
+        let mut arr = [0u8; 32];
+        arr[31] = 2;
+        arr[30] = 1;
 
-    #[test]
-    fn mul() {
-        assert_eq!(byte_array_eval(mul_byte_arrays(&vec![0,0,100], &vec![0,0,3])), 300); 
+        let modulus = 4; 
+
+        let mut expected_res = [0u8;32];
+        expected_res[31] = 2;
+
+        assert_eq!(byte_arr_mod(&mut arr, modulus), expected_res);
     }
 }
