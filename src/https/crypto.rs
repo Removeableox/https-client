@@ -11,23 +11,26 @@ pub struct Keys {
     private: Key, 
 }
 
-fn generate_random_number() -> u8 {
+
+/// helper function for random_key()
+fn random_number() -> u8 {
     let duration = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("Time went backwards");
     duration.as_nanos() as u8 % 0xFF
 }
 
-fn random_byte_array() -> Key {
+/// used for generating 32 byte private keys
+fn random_key() -> Key {
     let mut random = [0u8; 32]; 
     for i in 0..32 {
-        random[i] = generate_random_number();
+        random[i] = random_number();
     }
     random[0] = 0x0;
     random
 }
 
-fn byte_arr_mul(a: &mut Key, b: u8) {
+fn key_mul(a: &mut Key, b: u8) {
     let mut carry: u8 = 0;
     for i in DRANGE {
         let value: u128 = (a[i as usize] + carry) as u128 * b as u128;
@@ -36,17 +39,27 @@ fn byte_arr_mul(a: &mut Key, b: u8) {
     }
 } 
 
-///////// OIHFOIHEOFH NOT WORKING WHFIHI
-fn byte_arr_mod(a: &mut Key, b: u8) -> Key {
-    let mut carry: u8 = 0;
-    let result = 0; 
-    for i in RANGE {
-        // some logic i suppose
+/// input (32 byte array) % modulus (u8) 
+/// helper function for mod_keys()
+fn key_mod(mut input: Key, modulus: u8) -> u8 {
+    let mut carry: u32 = 0u32;
+    for i in 0..32 {
+        println!("current byte: {}", input[i]);
+        println!("carry from prev: {}", carry);
+
+        let value = input[i] as u32 + carry;
+        // if the last byte
+        if i == 31 {
+            return value as u8 % modulus; 
+        }
+        // if not the last byte
+        carry = (((value%modulus as u32) as f32 / modulus as f32) * 255f32) as u32;
     }
-    result
+    0u8
 }
 
-fn mod_byte_arrays(a: Key, b: Key) -> Key {
+/// a (32 byte array) % b (32 byte array)
+fn mod_keys(a: Key, b: Key) -> Key {
     // do something
     
     [0u8; 32] // temp
@@ -57,15 +70,15 @@ pub fn gen_public_key(mut private_key: Key) -> Key {
     let modulus = [0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xED];
     
     // 9 is the curve 25519 base point
-    byte_arr_mul(&mut private_key, 9u8);
+    key_mul(&mut private_key, 9u8);
 
-    let public_key = mod_byte_arrays(private_key, modulus);
+    let public_key = mod_keys(private_key, modulus);
 
     public_key 
 } 
 
 pub fn key_pair() -> Keys {
-    let private_key = random_byte_array();
+    let private_key = random_key();
     let public_key = gen_public_key(private_key.clone());
     return Keys {
         private: private_key,
@@ -76,18 +89,15 @@ pub fn key_pair() -> Keys {
 
 #[cfg(test)]
 mod tests {
-    use super::byte_arr_mod;
+    use super::{key_mod, random_key};
 
+    #[test]
     fn modulus() {
-        let mut arr = [0u8; 32];
-        arr[31] = 2;
-        arr[30] = 1;
-
-        let modulus = 4; 
-
-        let mut expected_res = [0u8;32];
-        expected_res[31] = 2;
-
-        assert_eq!(byte_arr_mod(&mut arr, modulus), expected_res);
+        let key = random_key(); 
+        println!("{:?}", key);
+        let modulus = 5;
+        println!("{}", modulus);
+        let res = key_mod(key, modulus);
+        println!("{}", res);
     }
 }
