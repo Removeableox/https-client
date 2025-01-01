@@ -42,34 +42,6 @@ fn key_mul(a: &mut Key, b: u8) {
     }
 } 
 
-/// input (32 byte array) % modulus (u8) 
-/// helper function for mod_keys()
-fn key_mod(input: Key, modulus: u8) -> u8 {
-    let mut carry: u32 = 0u32;
-    for i in 0..32 {
-        let value = input[i] as u32 + carry;
-        // if the last byte
-        if i == 31 {
-            return value as u8 % modulus; 
-        }
-        // if not the last byte
-        carry = (((value%modulus as u32) as f32 / modulus as f32) * 255f32) as u32;
-    }
-    0u8
-}
-
-/// Compute the modulus of one 32-byte array (`a`) with each byte of another array (`b`)
-fn mod_keys(a: Key, b: Key) -> Key {
-    let mut result = [0u8; 32]; // Result array
-    for i in 0..32 {
-        if b[i] == 0 {
-            result[i] = 0; // Define behavior for zero modulus (e.g., 0 here)
-        } else {
-            result[i] = key_mod(a, b[i]);
-        }
-    }
-    result
-}
 
 pub fn gen_public_key(mut private_key: Key) -> Key {
     key_mul(&mut private_key, BASEPOINT);
