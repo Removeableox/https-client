@@ -1,8 +1,8 @@
-use std::ops::{Mul, Rem, Sub};
+use std::ops::{Index, IndexMut, Mul, Rem, Sub};
 
 /// 256 bit integer implementation  
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct BigInt256([u8;32]);
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct BigInt256(pub [u8;32]);
 
 impl BigInt256 {
     pub fn from(bytes: [u8;32]) -> Self {
@@ -13,6 +13,10 @@ impl BigInt256 {
         let mut arr = [0u8;32];
         arr[31] = num;
         BigInt256(arr)
+    }
+
+    pub fn new() -> Self {
+        BigInt256([0u8; 32])
     }
 
     fn to_bytes(&self) -> &[u8; 32] {
@@ -30,20 +34,34 @@ impl BigInt256 {
     }
 }
 
+impl Index<u8> for BigInt256 {
+    type Output = u8;
+    
+    fn index(&self, index: u8) ->  &Self::Output {
+        &self.0[index as usize] 
+    }
+}
+
+impl IndexMut<u8> for BigInt256 {
+    fn index_mut(&mut self, index: u8) -> &mut Self::Output {
+        &mut self.0[index as usize] 
+    }
+}
+
 impl Sub for BigInt256 {
     type Output = BigInt256;
 
     fn sub(self, other: Self) -> BigInt256 {
-        let mut result = [0u8; 32];
+        let mut result = BigInt256::new();
         let mut borrow = 0;
 
         for i in (0..32).rev() {
-            let (diff, underflow) = self.0[i].overflowing_sub(other.0[i] + borrow);
+            let (diff, underflow) = self[i].overflowing_sub(other[i] + borrow);
             result[i] = diff;
             borrow = underflow as u8;
         }
 
-        BigInt256(result)
+        result
     }
 }
 
@@ -51,16 +69,16 @@ impl Mul for BigInt256 {
     type Output = BigInt256;
 
     fn mul(self, other: Self) -> BigInt256 {
-        let mut result = [0u8; 32];
+        let mut result = BigInt256([0u8;32]);
         let mut borrow = 0;
 
         for i in (0..32).rev() {
-            let (diff, underflow) = self.0[i].overflowing_mul(other.0[i] * borrow);
+            let (diff, underflow) = self[i].overflowing_mul(other.0[i] * borrow);
             result[i] = diff;
             borrow = underflow as u8;
         }
 
-        BigInt256(result)
+        result
     }
 }
 
