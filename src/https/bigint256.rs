@@ -19,6 +19,10 @@ impl BigInt256 {
         BigInt256([0u8; 32])
     }
 
+    pub fn iter_mut(&mut self) -> &mut [u8;32] {
+        &mut self.0
+    }
+
     fn to_bytes(&self) -> &[u8; 32] {
         &self.0
     }
@@ -73,7 +77,7 @@ impl Mul for BigInt256 {
         let mut borrow = 0;
 
         for i in (0..32).rev() {
-            let (diff, underflow) = self[i].overflowing_mul(other.0[i] * borrow);
+            let (diff, underflow) = self[i].overflowing_mul(other[i] * borrow);
             result[i] = diff;
             borrow = underflow as u8;
         }
