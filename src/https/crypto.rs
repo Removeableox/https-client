@@ -29,8 +29,9 @@ fn random_key() -> BigInt256 {
     random
 }
 
-pub fn gen_public_key(mut private_key: BigInt256) -> BigInt256 {
-    private_key 
+/// generate public key from a private key using curve 25519
+pub fn gen_public_key(private_key: BigInt256) -> BigInt256 {
+    private_key * BigInt256::from_u8(BASEPOINT) % BigInt256::from(MODULUS)
 } 
 
 pub fn key_pair() -> Keys {
