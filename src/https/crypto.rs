@@ -1,5 +1,5 @@
 use std::time::{SystemTime, UNIX_EPOCH};
-use crate::https::bigint256::BigInt256;
+use crate::https::{bigint256::BigInt256, rand::SimpleRng};
 
 // Curve25519 constants
 const MODULUS: [u8; 32] = [
@@ -17,18 +17,19 @@ pub struct Keys {
 }
 
 /// helper function for random_key()
-fn random_number() -> u8 {
+fn random_num_from_sys_time() -> u64 {
     let duration = SystemTime::now()
         .duration_since(UNIX_EPOCH)
         .expect("Time went backwards");
-    duration.as_nanos() as u8 % 0xFF
+    duration.as_nanos() as u64 
 }
 
 fn random_key() -> BigInt256 {
     let mut key = BigInt256::new();
+    let mut rng = SimpleRng::new(random_num_from_sys_time());
 
     for byte in key.iter_mut() {
-        *byte = random_number();
+        *byte = rng.next();
     }
 
     // Clamp the private key for Curve25519
