@@ -28,7 +28,4 @@ impl HttpsClient {
     fn parse_server_handshake(&self) {}
     fn client_change_cipher_spec(&self) {}
     fn client_handshake_finished(&self) {}
-    
-    // misc
-    
 }
