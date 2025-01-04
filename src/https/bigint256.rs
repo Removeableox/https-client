@@ -19,6 +19,10 @@ impl BigInt256 {
         BigInt256([0u8; 32])
     }
 
+    pub fn ouput(self) {
+        println!("{:?}", self.0);
+    }
+
     pub fn iter_mut(&mut self) -> &mut [u8;32] {
         &mut self.0
     }
